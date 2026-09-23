@@ -1,0 +1,16 @@
+{
+    "name": "CatLedger.Application",
+    "rootNamespace": "",
+    "references": [
+        "GUID:d758d235fc6ee084cb587d30e6a6a50e"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
