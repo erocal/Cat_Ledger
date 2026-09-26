@@ -1,0 +1,24 @@
+{
+    "name": "CatLedger.Tests.EditMode",
+    "rootNamespace": "",
+    "references": [
+        "GUID:d758d235fc6ee084cb587d30e6a6a50e",
+        "GUID:bd3d224256c9b6843964c6cd43df7bf8",
+        "GUID:0890d88e5b64220448d088e0875bee9b",
+        "GUID:0acc523941302664db1f4e527237feb3",
+        "GUID:27619889b8ba8c24980f49ee34dbb44a"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
