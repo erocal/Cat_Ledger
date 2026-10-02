@@ -20,6 +20,21 @@ namespace CatLedger.Infrastructure.Persistence
             return Task.CompletedTask;
         }
 
+        public Task<Transaction> GetByIdAsync(Guid transactionId)
+        {
+            Transaction transaction =
+                _transactions.FirstOrDefault(
+                    transaction => transaction.Id == transactionId);
+
+            if (transaction == null)
+            {
+                throw new KeyNotFoundException(
+                    $"Transaction was not found: {transactionId}");
+            }
+
+            return Task.FromResult(transaction);
+        }
+
         public Task<IReadOnlyList<Transaction>> GetMatchingAsync(
             TransactionFilter filter)
         {
@@ -70,6 +85,44 @@ namespace CatLedger.Infrastructure.Persistence
                     .ToList();
 
             return Task.FromResult(result);
+        }
+
+        public Task UpdateAsync(Transaction transaction)
+        {
+            if (transaction == null)
+            {
+                throw new ArgumentNullException(nameof(transaction));
+            }
+
+            int transactionIndex =
+                _transactions.FindIndex(
+                    existingTransaction =>
+                        existingTransaction.Id == transaction.Id);
+
+            if (transactionIndex < 0)
+            {
+                throw new KeyNotFoundException(
+                    $"Transaction was not found: {transaction.Id}");
+            }
+
+            _transactions[transactionIndex] = transaction;
+
+            return Task.CompletedTask;
+        }
+
+        public Task DeleteAsync(Guid transactionId)
+        {
+            int removedCount =
+                _transactions.RemoveAll(
+                    transaction => transaction.Id == transactionId);
+
+            if (removedCount == 0)
+            {
+                throw new KeyNotFoundException(
+                    $"Transaction was not found: {transactionId}");
+            }
+
+            return Task.CompletedTask;
         }
     }
 }

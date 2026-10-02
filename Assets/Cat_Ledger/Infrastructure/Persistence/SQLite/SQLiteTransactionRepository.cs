@@ -35,6 +35,24 @@ namespace CatLedger.Infrastructure.Persistence.SQLite
             await _database.Connection.InsertAsync(record);
         }
 
+        public async Task<Transaction> GetByIdAsync(Guid transactionId)
+        {
+            await _database.InitializeAsync();
+
+            TransactionRecord record =
+                await _database.Connection
+                    .FindAsync<TransactionRecord>(
+                        transactionId.ToString());
+
+            if (record == null)
+            {
+                throw new KeyNotFoundException(
+                    $"Transaction was not found: {transactionId}");
+            }
+
+            return TransactionRecordMapper.ToDomain(record);
+        }
+
         public async Task<IReadOnlyList<Transaction>> GetMatchingAsync(
             TransactionFilter filter)
         {
@@ -102,6 +120,44 @@ namespace CatLedger.Infrastructure.Persistence.SQLite
                     .ToList();
 
             return transactions;
+        }
+
+        public async Task UpdateAsync(Transaction transaction)
+        {
+            if (transaction == null)
+            {
+                throw new ArgumentNullException(nameof(transaction));
+            }
+
+            await _database.InitializeAsync();
+
+            TransactionRecord record =
+                TransactionRecordMapper.ToRecord(transaction);
+
+            int affectedRows =
+                await _database.Connection.UpdateAsync(record);
+
+            if (affectedRows == 0)
+            {
+                throw new KeyNotFoundException(
+                    $"Transaction was not found: {transaction.Id}");
+            }
+        }
+
+        public async Task DeleteAsync(Guid transactionId)
+        {
+            await _database.InitializeAsync();
+
+            int affectedRows =
+                await _database.Connection
+                    .DeleteAsync<TransactionRecord>(
+                        transactionId.ToString());
+
+            if (affectedRows == 0)
+            {
+                throw new KeyNotFoundException(
+                    $"Transaction was not found: {transactionId}");
+            }
         }
     }
 }

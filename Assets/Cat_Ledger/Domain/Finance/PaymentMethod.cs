@@ -4,9 +4,7 @@ namespace CatLedger.Domain.Finance
     {
         Cash = 0,
         CreditCard = 1,
-        DebitCard = 2,
-        MobilePayment = 3,
-        BankTransfer = 4,
-        Other = 5
+        MobilePayment = 2,
+        Other = 3
     }
 }

@@ -28,12 +28,14 @@ namespace CatLedger.Tests.EditMode.Finance
                 new DateTimeOffset(2026, 9, 25, 19, 30, 0, TimeSpan.FromHours(9));
 
             var request = new AddTransactionRequest(
+                new TransactionDetails(
                 amountInMinorUnits: 1200,
                 type: TransactionType.Expense,
                 category: TransactionCategory.Food,
                 paymentMethod: PaymentMethod.CreditCard,
                 occurredAt: occurredAt,
-                note: "一蘭拉麵");
+                note: "一蘭拉麵")
+                );
 
             // Act
             Transaction createdTransaction =

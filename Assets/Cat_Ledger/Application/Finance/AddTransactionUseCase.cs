@@ -30,15 +30,16 @@ namespace CatLedger.Application.Finance
             }
 
             DateTimeOffset currentTime = _clock.Now;
+            TransactionDetails details = request.Details;
 
             var transaction = new Transaction(
                 Guid.NewGuid(),
-                request.AmountInMinorUnits,
-                request.Type,
-                request.Category,
-                request.PaymentMethod,
-                request.OccurredAt,
-                request.Note,
+                details.AmountInMinorUnits,
+                details.Type,
+                details.Category,
+                details.PaymentMethod,
+                details.OccurredAt,
+                details.Note,
                 currentTime,
                 currentTime);
 
