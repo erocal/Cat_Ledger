@@ -16,7 +16,13 @@ namespace CatLedger.Presentation.Finance.TransactionList
         [SerializeField]
         private TMP_Text emptyStateText;
 
-        private readonly List<TransactionListItemView> _itemViews = new();
+        private readonly List<TransactionListItemView>
+            _itemViews = new();
+
+        private TransactionListItemView _expandedItemView;
+
+        public event Action<Guid> EditTransactionRequested;
+        public event Action<Guid> DeleteTransactionRequested;
 
         public void ShowTransactions(
             IReadOnlyList<TransactionListItemPresentationModel>
@@ -30,8 +36,9 @@ namespace CatLedger.Presentation.Finance.TransactionList
 
             ClearItems();
 
-            foreach (TransactionListItemPresentationModel presentationModel
-                     in presentationModels)
+            foreach (
+                TransactionListItemPresentationModel presentationModel
+                in presentationModels)
             {
                 TransactionListItemView itemView =
                     Instantiate(
@@ -39,6 +46,15 @@ namespace CatLedger.Presentation.Finance.TransactionList
                         contentRoot);
 
                 itemView.Bind(presentationModel);
+
+                itemView.ExpansionRequested +=
+                    HandleExpansionRequested;
+
+                itemView.EditRequested +=
+                    HandleEditRequested;
+
+                itemView.DeleteRequested +=
+                    HandleDeleteRequested;
 
                 _itemViews.Add(itemView);
             }
@@ -53,24 +69,76 @@ namespace CatLedger.Presentation.Finance.TransactionList
                 $"Failed to display transactions: {message}");
         }
 
+        private void HandleExpansionRequested(
+            TransactionListItemView requestedItemView)
+        {
+            if (_expandedItemView == requestedItemView)
+            {
+                _expandedItemView.SetActionsVisible(false);
+                _expandedItemView = null;
+
+                return;
+            }
+
+            if (_expandedItemView != null)
+            {
+                _expandedItemView.SetActionsVisible(false);
+            }
+
+            requestedItemView.SetActionsVisible(true);
+
+            _expandedItemView = requestedItemView;
+        }
+
+        private void HandleEditRequested(
+            Guid transactionId)
+        {
+            EditTransactionRequested?.Invoke(
+                transactionId);
+        }
+
+        private void HandleDeleteRequested(
+            Guid transactionId)
+        {
+            DeleteTransactionRequested?.Invoke(
+                transactionId);
+        }
+
         private void ClearItems()
         {
-            foreach (TransactionListItemView itemView in _itemViews)
+            _expandedItemView = null;
+
+            foreach (
+                TransactionListItemView itemView
+                in _itemViews)
             {
-                if (itemView != null)
+                if (itemView == null)
                 {
-                    Destroy(itemView.gameObject);
+                    continue;
                 }
+
+                itemView.ExpansionRequested -=
+                    HandleExpansionRequested;
+
+                itemView.EditRequested -=
+                    HandleEditRequested;
+
+                itemView.DeleteRequested -=
+                    HandleDeleteRequested;
+
+                Destroy(itemView.gameObject);
             }
 
             _itemViews.Clear();
         }
 
-        private void SetEmptyStateVisible(bool isVisible)
+        private void SetEmptyStateVisible(
+            bool isVisible)
         {
             if (emptyStateText != null)
             {
-                emptyStateText.gameObject.SetActive(isVisible);
+                emptyStateText.gameObject.SetActive(
+                    isVisible);
             }
         }
     }

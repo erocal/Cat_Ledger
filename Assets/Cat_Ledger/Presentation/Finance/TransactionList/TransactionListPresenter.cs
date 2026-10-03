@@ -1,9 +1,10 @@
+using CatLedger.Application.Finance;
+using CatLedger.Domain.Finance;
+using CatLedger.Presentation.Finance.EditTransaction;
+using CatLedger.Presentation.Navigation;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using CatLedger.Application.Finance;
-using CatLedger.Domain.Finance;
-using CatLedger.Presentation.Navigation;
 using VContainer.Unity;
 
 namespace CatLedger.Presentation.Finance.TransactionList
@@ -19,13 +20,16 @@ namespace CatLedger.Presentation.Finance.TransactionList
         private readonly GetTransactionsUseCase
             _getTransactionsUseCase;
         private readonly AppNavigator _appNavigator;
+        private readonly EditTransactionNavigationState
+            _editTransactionNavigationState;
 
         private bool _isRefreshing;
 
         public TransactionListPresenter(
             TransactionListView view,
             GetTransactionsUseCase getTransactionsUseCase,
-            AppNavigator appNavigator)
+            AppNavigator appNavigator,
+            EditTransactionNavigationState editTransactionNavigationState)
         {
             _view = view
                 ?? throw new ArgumentNullException(
@@ -39,13 +43,25 @@ namespace CatLedger.Presentation.Finance.TransactionList
             _appNavigator = appNavigator
                 ?? throw new ArgumentNullException(
                     nameof(appNavigator));
+
+            _editTransactionNavigationState = editTransactionNavigationState
+                ?? throw new ArgumentNullException(
+                    nameof(editTransactionNavigationState));
         }
 
         public void Start()
         {
-            _appNavigator.PageChanged += HandlePageChanged;
+            _appNavigator.PageChanged +=
+                HandlePageChanged;
 
-            if (_appNavigator.CurrentPage == AppPage.Ledger)
+            _view.EditTransactionRequested +=
+                HandleEditTransactionRequested;
+
+            _view.DeleteTransactionRequested +=
+                HandleDeleteTransactionRequested;
+
+            if (_appNavigator.CurrentPage ==
+                AppPage.Ledger)
             {
                 Refresh();
             }
@@ -53,7 +69,14 @@ namespace CatLedger.Presentation.Finance.TransactionList
 
         public void Dispose()
         {
-            _appNavigator.PageChanged -= HandlePageChanged;
+            _appNavigator.PageChanged -=
+                HandlePageChanged;
+
+            _view.EditTransactionRequested -=
+                HandleEditTransactionRequested;
+
+            _view.DeleteTransactionRequested -=
+                HandleDeleteTransactionRequested;
         }
 
         private void HandlePageChanged(AppPage page)
@@ -62,6 +85,20 @@ namespace CatLedger.Presentation.Finance.TransactionList
             {
                 Refresh();
             }
+        }
+
+        private void HandleEditTransactionRequested(Guid transactionId)
+        {
+            _editTransactionNavigationState.SelectTransaction(transactionId);
+
+            _appNavigator.NavigateTo(AppPage.EditTransaction);
+        }
+
+        private void HandleDeleteTransactionRequested(
+            Guid transactionId)
+        {
+            UnityEngine.Debug.Log(
+                $"Delete transaction requested: {transactionId}");
         }
 
         private async void Refresh()
@@ -145,6 +182,7 @@ namespace CatLedger.Presentation.Finance.TransactionList
                     CultureInfo.InvariantCulture);
 
             return new TransactionListItemPresentationModel(
+                transaction.Id,
                 amountText,
                 transaction.Category.ToString(),
                 transaction.PaymentMethod.ToString(),

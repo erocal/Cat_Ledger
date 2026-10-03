@@ -1,11 +1,12 @@
-using System.IO;
 using CatLedger.Application.Common;
 using CatLedger.Application.Finance;
 using CatLedger.Infrastructure.Persistence.SQLite;
 using CatLedger.Infrastructure.Time;
 using CatLedger.Presentation.Finance.AddTransaction;
+using CatLedger.Presentation.Finance.EditTransaction;
 using CatLedger.Presentation.Finance.TransactionList;
 using CatLedger.Presentation.Navigation;
+using System.IO;
 using UnityEngine;
 using VContainer;
 using VContainer.Unity;
@@ -21,6 +22,9 @@ namespace CatLedger.Presentation.Bootstrap
         [Header("Finance Views")]
         [SerializeField]
         private AddTransactionView addTransactionView;
+
+        [SerializeField]
+        private EditTransactionView editTransactionView;
 
         [SerializeField]
         private TransactionListView transactionListView;
@@ -63,6 +67,9 @@ namespace CatLedger.Presentation.Bootstrap
             builder.Register<GetTransactionsUseCase>(
                 Lifetime.Transient);
 
+            builder.Register<GetTransactionByIdUseCase>(
+                Lifetime.Transient);
+
             builder.Register<UpdateTransactionUseCase>(
                 Lifetime.Transient);
 
@@ -71,7 +78,7 @@ namespace CatLedger.Presentation.Bootstrap
         }
 
         private void RegisterPresentation(
-            IContainerBuilder builder)
+    IContainerBuilder builder)
         {
             builder.RegisterComponent(
                 appNavigator);
@@ -82,11 +89,21 @@ namespace CatLedger.Presentation.Bootstrap
             builder.RegisterComponent(
                 transactionListView);
 
+            builder.RegisterComponent(
+                editTransactionView);
+
+            builder.Register<
+                EditTransactionNavigationState>(
+                Lifetime.Singleton);
+
             builder.RegisterEntryPoint<
                 AddTransactionPresenter>();
 
             builder.RegisterEntryPoint<
                 TransactionListPresenter>();
+
+            builder.RegisterEntryPoint<
+                EditTransactionPresenter>();
         }
     }
 }

@@ -1,7 +1,11 @@
+using System;
+
 namespace CatLedger.Presentation.Finance.TransactionList
 {
     public sealed class TransactionListItemPresentationModel
     {
+        public Guid TransactionId { get; }
+
         public string AmountText { get; }
 
         public string CategoryText { get; }
@@ -13,12 +17,14 @@ namespace CatLedger.Presentation.Finance.TransactionList
         public string NoteText { get; }
 
         public TransactionListItemPresentationModel(
+            Guid transactionId,
             string amountText,
             string categoryText,
             string paymentMethodText,
             string occurredAtText,
             string noteText)
         {
+            TransactionId = transactionId;
             AmountText = amountText;
             CategoryText = categoryText;
             PaymentMethodText = paymentMethodText;

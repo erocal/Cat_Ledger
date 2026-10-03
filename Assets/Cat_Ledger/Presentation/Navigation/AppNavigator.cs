@@ -13,6 +13,9 @@ namespace CatLedger.Presentation.Navigation
         [SerializeField]
         private GameObject addTransactionPage;
 
+        [SerializeField]
+        private GameObject editTransactionPage;
+
         [Header("Navigation")]
         [SerializeField]
         private Button ledgerButton;
@@ -46,18 +49,19 @@ namespace CatLedger.Presentation.Navigation
 
         public void NavigateTo(AppPage page)
         {
-            bool isLedgerVisible = page == AppPage.Ledger;
+            ledgerPage.SetActive(
+                page == AppPage.Ledger);
 
-            bool isAddTransactionVisible = page == AppPage.AddTransaction;
+            addTransactionPage.SetActive(
+                page == AppPage.AddTransaction);
 
-            ledgerPage.SetActive(isLedgerVisible);
-            addTransactionPage.SetActive(isAddTransactionVisible);
+            editTransactionPage.SetActive(
+                page == AppPage.EditTransaction);
 
             CurrentPage = page;
 
             PageChanged?.Invoke(page);
         }
-
         private void ShowLedgerPage()
         {
             if (CurrentPage == AppPage.Ledger)
