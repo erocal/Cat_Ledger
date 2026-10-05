@@ -10,38 +10,54 @@ using System.Threading.Tasks;
 
 namespace CatLedger.Infrastructure.Persistence.SQLite
 {
-    public sealed class SQLiteTransactionRepository : ITransactionRepository
+    public sealed class SQLiteTransactionRepository :
+        ITransactionRepository
     {
         private readonly CatLedgerDatabase _database;
 
-        public SQLiteTransactionRepository(CatLedgerDatabase database)
+        public SQLiteTransactionRepository(
+            CatLedgerDatabase database)
         {
             _database = database
-                ?? throw new ArgumentNullException(nameof(database));
+                ?? throw new ArgumentNullException(
+                    nameof(database));
         }
 
-        public async Task AddAsync(Transaction transaction)
+        public Task AddAsync(
+            Transaction transaction)
         {
             if (transaction == null)
             {
-                throw new ArgumentNullException(nameof(transaction));
+                throw new ArgumentNullException(
+                    nameof(transaction));
             }
 
-            await _database.InitializeAsync();
+            _database.Initialize();
 
             TransactionRecord record =
-                TransactionRecordMapper.ToRecord(transaction);
+                TransactionRecordMapper.ToRecord(
+                    transaction);
 
-            await _database.Connection.InsertAsync(record);
+            _database.Connection.Insert(record);
+
+            return Task.CompletedTask;
         }
 
-        public async Task<Transaction> GetByIdAsync(Guid transactionId)
+        public Task<Transaction> GetByIdAsync(
+            Guid transactionId)
         {
-            await _database.InitializeAsync();
+            if (transactionId == Guid.Empty)
+            {
+                throw new ArgumentException(
+                    "Transaction ID cannot be empty.",
+                    nameof(transactionId));
+            }
+
+            _database.Initialize();
 
             TransactionRecord record =
-                await _database.Connection
-                    .FindAsync<TransactionRecord>(
+                _database.Connection
+                    .Find<TransactionRecord>(
                         transactionId.ToString());
 
             if (record == null)
@@ -50,21 +66,28 @@ namespace CatLedger.Infrastructure.Persistence.SQLite
                     $"Transaction was not found: {transactionId}");
             }
 
-            return TransactionRecordMapper.ToDomain(record);
+            Transaction transaction =
+                TransactionRecordMapper.ToDomain(
+                    record);
+
+            return Task.FromResult(transaction);
         }
 
-        public async Task<IReadOnlyList<Transaction>> GetMatchingAsync(
-            TransactionFilter filter)
+        public Task<IReadOnlyList<Transaction>>
+            GetMatchingAsync(
+                TransactionFilter filter)
         {
             if (filter == null)
             {
-                throw new ArgumentNullException(nameof(filter));
+                throw new ArgumentNullException(
+                    nameof(filter));
             }
 
-            await _database.InitializeAsync();
+            _database.Initialize();
 
-            AsyncTableQuery<TransactionRecord> databaseQuery =
-                _database.Connection.Table<TransactionRecord>();
+            TableQuery<TransactionRecord> databaseQuery =
+                _database.Connection
+                    .Table<TransactionRecord>();
 
             if (filter.StartOccurredAtInclusive.HasValue)
             {
@@ -72,10 +95,11 @@ namespace CatLedger.Infrastructure.Persistence.SQLite
                     filter.StartOccurredAtInclusive.Value
                         .ToUnixTimeMilliseconds();
 
-                databaseQuery = databaseQuery.Where(
-                    record =>
-                        record.OccurredAtUnixMilliseconds >=
-                        startUnixMilliseconds);
+                databaseQuery =
+                    databaseQuery.Where(
+                        record =>
+                            record.OccurredAtUnixMilliseconds >=
+                            startUnixMilliseconds);
             }
 
             if (filter.EndOccurredAtExclusive.HasValue)
@@ -84,10 +108,11 @@ namespace CatLedger.Infrastructure.Persistence.SQLite
                     filter.EndOccurredAtExclusive.Value
                         .ToUnixTimeMilliseconds();
 
-                databaseQuery = databaseQuery.Where(
-                    record =>
-                        record.OccurredAtUnixMilliseconds <
-                        endUnixMilliseconds);
+                databaseQuery =
+                    databaseQuery.Where(
+                        record =>
+                            record.OccurredAtUnixMilliseconds <
+                            endUnixMilliseconds);
             }
 
             if (filter.Category.HasValue)
@@ -95,8 +120,11 @@ namespace CatLedger.Infrastructure.Persistence.SQLite
                 int categoryValue =
                     (int)filter.Category.Value;
 
-                databaseQuery = databaseQuery.Where(
-                    record => record.Category == categoryValue);
+                databaseQuery =
+                    databaseQuery.Where(
+                        record =>
+                            record.Category ==
+                            categoryValue);
             }
 
             if (filter.Type.HasValue)
@@ -104,60 +132,80 @@ namespace CatLedger.Infrastructure.Persistence.SQLite
                 int transactionTypeValue =
                     (int)filter.Type.Value;
 
-                databaseQuery = databaseQuery.Where(
-                    record => record.Type == transactionTypeValue);
+                databaseQuery =
+                    databaseQuery.Where(
+                        record =>
+                            record.Type ==
+                            transactionTypeValue);
             }
 
             List<TransactionRecord> records =
-                await databaseQuery
+                databaseQuery
                     .OrderByDescending(
-                        record => record.OccurredAtUnixMilliseconds)
-                    .ToListAsync();
+                        record =>
+                            record.OccurredAtUnixMilliseconds)
+                    .ToList();
 
             IReadOnlyList<Transaction> transactions =
                 records
-                    .Select(TransactionRecordMapper.ToDomain)
+                    .Select(
+                        TransactionRecordMapper.ToDomain)
                     .ToList();
 
-            return transactions;
+            return Task.FromResult(transactions);
         }
 
-        public async Task UpdateAsync(Transaction transaction)
+        public Task UpdateAsync(
+            Transaction transaction)
         {
             if (transaction == null)
             {
-                throw new ArgumentNullException(nameof(transaction));
+                throw new ArgumentNullException(
+                    nameof(transaction));
             }
 
-            await _database.InitializeAsync();
+            _database.Initialize();
 
             TransactionRecord record =
-                TransactionRecordMapper.ToRecord(transaction);
+                TransactionRecordMapper.ToRecord(
+                    transaction);
 
             int affectedRows =
-                await _database.Connection.UpdateAsync(record);
+                _database.Connection.Update(record);
 
             if (affectedRows == 0)
             {
                 throw new KeyNotFoundException(
                     $"Transaction was not found: {transaction.Id}");
             }
+
+            return Task.CompletedTask;
         }
 
-        public async Task DeleteAsync(Guid transactionId)
+        public Task DeleteAsync(
+            Guid transactionId)
         {
-            await _database.InitializeAsync();
+            if (transactionId == Guid.Empty)
+            {
+                throw new ArgumentException(
+                    "Transaction ID cannot be empty.",
+                    nameof(transactionId));
+            }
+
+            _database.Initialize();
 
             int affectedRows =
-                await _database.Connection
-                    .DeleteAsync<TransactionRecord>(
-                        transactionId.ToString());
+                _database.Connection.Execute(
+                    "DELETE FROM Transactions WHERE Id = ?",
+                    transactionId.ToString());
 
             if (affectedRows == 0)
             {
                 throw new KeyNotFoundException(
                     $"Transaction was not found: {transactionId}");
             }
+
+            return Task.CompletedTask;
         }
     }
 }

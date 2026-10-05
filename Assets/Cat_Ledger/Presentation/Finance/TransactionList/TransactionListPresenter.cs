@@ -6,6 +6,8 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using VContainer.Unity;
+using System.Threading.Tasks;
+using CatLedger.Presentation.Common.Dialogs;
 
 namespace CatLedger.Presentation.Finance.TransactionList
 {
@@ -23,13 +25,21 @@ namespace CatLedger.Presentation.Finance.TransactionList
         private readonly EditTransactionNavigationState
             _editTransactionNavigationState;
 
+        private readonly DeleteTransactionUseCase _deleteTransactionUseCase;
+
+        private readonly ConfirmationDialogController _confirmationDialogController;
+
+        private bool _isDeleting;
+
         private bool _isRefreshing;
 
         public TransactionListPresenter(
             TransactionListView view,
             GetTransactionsUseCase getTransactionsUseCase,
             AppNavigator appNavigator,
-            EditTransactionNavigationState editTransactionNavigationState)
+            EditTransactionNavigationState editTransactionNavigationState,
+            DeleteTransactionUseCase deleteTransactionUseCase,
+            ConfirmationDialogController confirmationDialogController)
         {
             _view = view
                 ?? throw new ArgumentNullException(
@@ -47,6 +57,14 @@ namespace CatLedger.Presentation.Finance.TransactionList
             _editTransactionNavigationState = editTransactionNavigationState
                 ?? throw new ArgumentNullException(
                     nameof(editTransactionNavigationState));
+
+            _deleteTransactionUseCase = deleteTransactionUseCase
+                ?? throw new ArgumentNullException(
+                    nameof(deleteTransactionUseCase));
+
+            _confirmationDialogController = confirmationDialogController
+                ?? throw new ArgumentNullException(
+                    nameof(confirmationDialogController));
         }
 
         public void Start()
@@ -63,7 +81,7 @@ namespace CatLedger.Presentation.Finance.TransactionList
             if (_appNavigator.CurrentPage ==
                 AppPage.Ledger)
             {
-                Refresh();
+                _ = RefreshAsync();
             }
         }
 
@@ -83,7 +101,7 @@ namespace CatLedger.Presentation.Finance.TransactionList
         {
             if (page == AppPage.Ledger)
             {
-                Refresh();
+                _ = RefreshAsync();
             }
         }
 
@@ -94,14 +112,52 @@ namespace CatLedger.Presentation.Finance.TransactionList
             _appNavigator.NavigateTo(AppPage.EditTransaction);
         }
 
-        private void HandleDeleteTransactionRequested(
-            Guid transactionId)
+        private async void HandleDeleteTransactionRequested(Guid transactionId)
         {
-            UnityEngine.Debug.Log(
-                $"Delete transaction requested: {transactionId}");
+            if (_isDeleting ||
+                transactionId == Guid.Empty)
+            {
+                return;
+            }
+
+            try
+            {
+                bool confirmed =
+                    await _confirmationDialogController.ShowAsync(
+                        title: "Delete Transaction",
+                        message:
+                            "Are you sure you want to delete this transaction?",
+                        confirmText: "Delete",
+                        cancelText: "Cancel");
+
+                if (!confirmed)
+                {
+                    return;
+                }
+
+                _isDeleting = true;
+
+                await _deleteTransactionUseCase
+                    .ExecuteAsync(transactionId);
+
+                if (_appNavigator.CurrentPage ==
+                    AppPage.Ledger)
+                {
+                    await RefreshAsync();
+                }
+            }
+            catch (Exception exception)
+            {
+                _view.ShowError(
+                    exception.Message);
+            }
+            finally
+            {
+                _isDeleting = false;
+            }
         }
 
-        private async void Refresh()
+        private async Task RefreshAsync()
         {
             if (_isRefreshing)
             {
@@ -116,10 +172,11 @@ namespace CatLedger.Presentation.Finance.TransactionList
                     new TransactionFilter();
 
                 IReadOnlyList<Transaction> transactions =
-                    await _getTransactionsUseCase.ExecuteAsync(
-                        filter);
+                    await _getTransactionsUseCase
+                        .ExecuteAsync(filter);
 
-                if (_appNavigator.CurrentPage != AppPage.Ledger)
+                if (_appNavigator.CurrentPage !=
+                    AppPage.Ledger)
                 {
                     return;
                 }

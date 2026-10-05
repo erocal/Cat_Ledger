@@ -2,6 +2,7 @@ using CatLedger.Application.Common;
 using CatLedger.Application.Finance;
 using CatLedger.Infrastructure.Persistence.SQLite;
 using CatLedger.Infrastructure.Time;
+using CatLedger.Presentation.Common.Dialogs;
 using CatLedger.Presentation.Finance.AddTransaction;
 using CatLedger.Presentation.Finance.EditTransaction;
 using CatLedger.Presentation.Finance.TransactionList;
@@ -28,6 +29,9 @@ namespace CatLedger.Presentation.Bootstrap
 
         [SerializeField]
         private TransactionListView transactionListView;
+
+        [SerializeField]
+        private ConfirmationDialogView confirmationDialogView;
 
         protected override void Configure(
             IContainerBuilder builder)
@@ -77,23 +81,24 @@ namespace CatLedger.Presentation.Bootstrap
                 Lifetime.Transient);
         }
 
-        private void RegisterPresentation(
-    IContainerBuilder builder)
+        private void RegisterPresentation(IContainerBuilder builder)
         {
-            builder.RegisterComponent(
-                appNavigator);
+            builder.RegisterComponent(appNavigator);
 
-            builder.RegisterComponent(
-                addTransactionView);
+            builder.RegisterComponent(addTransactionView);
 
-            builder.RegisterComponent(
-                transactionListView);
+            builder.RegisterComponent(transactionListView);
 
-            builder.RegisterComponent(
-                editTransactionView);
+            builder.RegisterComponent(editTransactionView);
+
+            builder.RegisterComponent(confirmationDialogView);
 
             builder.Register<
                 EditTransactionNavigationState>(
+                Lifetime.Singleton);
+
+            builder.Register<
+                ConfirmationDialogController>(
                 Lifetime.Singleton);
 
             builder.RegisterEntryPoint<

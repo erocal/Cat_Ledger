@@ -1,17 +1,25 @@
 using System;
 using System.IO;
-using System.Threading.Tasks;
 using CatLedger.Infrastructure.Persistence.SQLite.Records;
 using SQLite;
 
 namespace CatLedger.Infrastructure.Persistence.SQLite
 {
-    public sealed class CatLedgerDatabase
+    public sealed class CatLedgerDatabase : IDisposable
     {
-        private readonly SQLiteAsyncConnection _connection;
-        private Task _initializationTask;
+        private readonly SQLiteConnection _connection;
 
-        internal SQLiteAsyncConnection Connection => _connection;
+        private bool _isInitialized;
+        private bool _isDisposed;
+
+        internal SQLiteConnection Connection
+        {
+            get
+            {
+                ThrowIfDisposed();
+                return _connection;
+            }
+        }
 
         public CatLedgerDatabase(string databasePath)
         {
@@ -22,36 +30,51 @@ namespace CatLedger.Infrastructure.Persistence.SQLite
                     nameof(databasePath));
             }
 
-            string directoryPath = Path.GetDirectoryName(databasePath);
+            string directoryPath =
+                Path.GetDirectoryName(databasePath);
 
             if (!string.IsNullOrWhiteSpace(directoryPath))
             {
                 Directory.CreateDirectory(directoryPath);
             }
 
-            _connection = new SQLiteAsyncConnection(databasePath);
+            _connection =
+                new SQLiteConnection(databasePath);
         }
 
-        public Task InitializeAsync()
+        public void Initialize()
         {
-            if (_initializationTask != null)
+            ThrowIfDisposed();
+
+            if (_isInitialized)
             {
-                return _initializationTask;
+                return;
             }
 
-            _initializationTask = InitializeInternalAsync();
+            _connection.CreateTable<TransactionRecord>();
 
-            return _initializationTask;
+            _isInitialized = true;
         }
 
-        public Task CloseAsync()
+        public void Dispose()
         {
-            return _connection.CloseAsync();
+            if (_isDisposed)
+            {
+                return;
+            }
+
+            _connection.Dispose();
+
+            _isDisposed = true;
         }
 
-        private async Task InitializeInternalAsync()
+        private void ThrowIfDisposed()
         {
-            await _connection.CreateTableAsync<TransactionRecord>();
+            if (_isDisposed)
+            {
+                throw new ObjectDisposedException(
+                    nameof(CatLedgerDatabase));
+            }
         }
     }
 }
