@@ -1,5 +1,6 @@
 using CatLedger.Application.Common;
 using CatLedger.Application.Finance;
+using CatLedger.Application.Statistics;
 using CatLedger.Infrastructure.Persistence.SQLite;
 using CatLedger.Infrastructure.Time;
 using CatLedger.Presentation.Common.Dialogs;
@@ -7,6 +8,7 @@ using CatLedger.Presentation.Finance.AddTransaction;
 using CatLedger.Presentation.Finance.EditTransaction;
 using CatLedger.Presentation.Finance.TransactionList;
 using CatLedger.Presentation.Navigation;
+using CatLedger.Presentation.Statistics;
 using System.IO;
 using UnityEngine;
 using VContainer;
@@ -33,11 +35,15 @@ namespace CatLedger.Presentation.Bootstrap
         [SerializeField]
         private ConfirmationDialogView confirmationDialogView;
 
+        [SerializeField]
+        private StatisticsView statisticsView;
+
         protected override void Configure(
             IContainerBuilder builder)
         {
             RegisterInfrastructure(builder);
             RegisterFinanceUseCases(builder);
+            RegisterStatisticsUseCases(builder);
             RegisterPresentation(builder);
         }
 
@@ -81,6 +87,16 @@ namespace CatLedger.Presentation.Bootstrap
                 Lifetime.Transient);
         }
 
+        private static void RegisterStatisticsUseCases(
+            IContainerBuilder builder)
+        {
+            builder.Register<StatisticsCalculator>(
+                Lifetime.Singleton);
+
+            builder.Register<GetStatisticsReportUseCase>(
+                Lifetime.Transient);
+        }
+
         private void RegisterPresentation(IContainerBuilder builder)
         {
             builder.RegisterComponent(appNavigator);
@@ -92,6 +108,8 @@ namespace CatLedger.Presentation.Bootstrap
             builder.RegisterComponent(editTransactionView);
 
             builder.RegisterComponent(confirmationDialogView);
+
+            builder.RegisterComponent(statisticsView);
 
             builder.Register<
                 EditTransactionNavigationState>(
@@ -109,6 +127,9 @@ namespace CatLedger.Presentation.Bootstrap
 
             builder.RegisterEntryPoint<
                 EditTransactionPresenter>();
+
+            builder.RegisterEntryPoint<
+                StatisticsPresenter>();
         }
     }
 }
